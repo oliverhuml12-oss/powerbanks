@@ -1,0 +1,479 @@
+* {
+    box-sizing: border-box;
+  }
+  
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: #0a0d0f;
+    color: #f5f7f6;
+    font-family: Arial, Helvetica, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  
+  /* HLAVNÍ KARTA */
+  
+  .phone {
+    width: 100%;
+    max-width: 540px;
+    min-height: 720px;
+    position: relative;
+    overflow: hidden;
+  
+    border: 1px solid #293034;
+    border-radius: 24px;
+  
+    background:
+      radial-gradient(
+        circle at 50% 15%,
+        #171d20 0%,
+        #0e1214 45%,
+        #0b0e10 100%
+      );
+  
+    padding: 40px 34px;
+  }
+  
+  /* jemná mřížka na pozadí */
+  
+  .phone::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+  
+    background-image:
+      linear-gradient(
+        rgba(53, 213, 138, 0.025) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        90deg,
+        rgba(53, 213, 138, 0.025) 1px,
+        transparent 1px
+      );
+  
+    background-size: 28px 28px;
+    pointer-events: none;
+  }
+  
+  .content {
+    position: relative;
+    z-index: 1;
+  }
+  
+  /* LOGO */
+  
+  .brand {
+    text-align: center;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+  }
+  
+  .logo {
+    color: #35d58a;
+    font-size: 28px;
+    vertical-align: middle;
+  }
+  
+  /* ID */
+  
+  .powerbank-id {
+    text-align: center;
+    margin-top: 14px;
+    color: #899194;
+    font-size: 13px;
+  }
+  
+  .powerbank-id span {
+    color: #35d58a;
+    border: 1px solid #26342d;
+    padding: 6px 9px;
+    border-radius: 7px;
+  }
+  
+  /* ODDELOVAC */
+  
+  .divider {
+    height: 1px;
+    background: #252b2e;
+    margin: 24px 0 34px;
+  }
+  
+  /* STATUS */
+  
+  .status {
+    display: inline-block;
+    padding: 8px 11px;
+    border-radius: 7px;
+  
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+  
+    margin-bottom: 20px;
+  }
+  
+  .status-new {
+    color: #35d58a;
+    background: rgba(53, 213, 138, 0.08);
+    border: 1px solid rgba(53, 213, 138, 0.18);
+  }
+  
+  .status-borrowed {
+    color: #e8bd4b;
+    background: rgba(232, 189, 75, 0.08);
+    border: 1px solid rgba(232, 189, 75, 0.18);
+  }
+  
+  .status-expired {
+    color: #ff7777;
+    background: rgba(255, 119, 119, 0.08);
+    border: 1px solid rgba(255, 119, 119, 0.18);
+  }
+  
+  .status-returned {
+    color: #62b8ff;
+    background: rgba(98, 184, 255, 0.08);
+    border: 1px solid rgba(98, 184, 255, 0.18);
+  }
+  
+  /* TEXT */
+  
+  h1 {
+    font-size: 34px;
+    line-height: 1.08;
+    letter-spacing: -1px;
+  
+    margin: 0 0 14px;
+  }
+  
+  .description {
+    color: #969ea1;
+    line-height: 1.55;
+    font-size: 15px;
+  
+    margin: 0 0 32px;
+  }
+  
+  /* INPUT */
+  
+  .label {
+    display: block;
+  
+    color: #dce1e2;
+    font-size: 11px;
+    font-weight: 700;
+  
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+  
+  input {
+    width: 100%;
+    height: 50px;
+  
+    padding: 0 15px;
+  
+    background: #101417;
+    color: white;
+  
+    border: 1px solid #343b3f;
+    border-radius: 9px;
+  
+    outline: none;
+  
+    font-size: 15px;
+  }
+  
+  input::placeholder {
+    color: #697174;
+  }
+  
+  input:focus {
+    border-color: #35d58a;
+  }
+  
+  /* BUTTON */
+  
+  button {
+    width: 100%;
+    height: 50px;
+  
+    margin-top: 10px;
+  
+    border: 0;
+    border-radius: 9px;
+  
+    background: #35b878;
+    color: #06100b;
+  
+    font-size: 14px;
+    font-weight: 700;
+  
+    cursor: pointer;
+  }
+  
+  button:hover {
+    background: #43d68d;
+  }
+  
+  /* INFO BOX */
+  
+  .info {
+    margin-top: 48px;
+  
+    padding: 17px;
+  
+    border: 1px solid #292f33;
+    border-radius: 10px;
+  
+    background: rgba(255, 255, 255, 0.025);
+  }
+  
+  .info-title {
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+  
+  .info-text {
+    color: #7f898c;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  
+  /* COUNTDOWN */
+  
+  .countdown {
+    margin: 28px 0 0;
+  
+    padding: 22px;
+  
+    border: 1px solid #45402c;
+    border-radius: 11px;
+  
+    background: rgba(232, 189, 75, 0.035);
+  }
+  
+  .countdown-label {
+    color: #a5a09a;
+  
+    font-size: 10px;
+    font-weight: 700;
+  
+    text-transform: uppercase;
+  }
+  
+  .countdown-time {
+    color: #e8bd4b;
+  
+    font-size: 32px;
+    font-weight: 700;
+  
+    letter-spacing: 1px;
+  
+    margin: 11px 0;
+  }
+  
+  .countdown-units {
+    display: flex;
+    justify-content: space-between;
+  
+    color: #747b7e;
+  
+    font-size: 9px;
+    text-transform: uppercase;
+  }
+  
+  /* DETAIL */
+  
+  .detail {
+    border-top: 1px solid #292f33;
+  
+    padding-top: 15px;
+    margin-top: 15px;
+  }
+  
+  .detail-label {
+    color: #8a9295;
+  
+    font-size: 10px;
+    text-transform: uppercase;
+  
+    margin-bottom: 6px;
+  }
+  
+  .detail-value {
+    color: #cdd2d3;
+    font-size: 13px;
+  }
+  
+  .map-link {
+    display: block;
+  
+    color: #35d58a;
+  
+    margin-top: 9px;
+  
+    text-decoration: none;
+  
+    font-size: 13px;
+  }
+  
+  /* PŘÍJEM VRÁCENÉ POWERBANKY */
+  
+  .return-box {
+    margin-top: 48px;
+  
+    padding-top: 20px;
+  
+    border-top: 1px solid #252b2e;
+  }
+  
+  .return-box button {
+    background: transparent;
+  
+    border: 1px solid #343b3f;
+  
+    color: #858e91;
+  
+    font-size: 12px;
+    font-weight: 500;
+  }
+  
+  .return-box button:hover {
+    background: transparent;
+  
+    border-color: #35d58a;
+  
+    color: #35d58a;
+  }
+  
+  .return-note {
+    color: #626b6e;
+  
+    font-size: 10px;
+    line-height: 1.4;
+  
+    margin-top: 9px;
+  
+    text-align: center;
+  }
+  
+  /* IKONA EXPIROVANÁ / VRÁCENÁ */
+  
+  .big-icon {
+    width: 105px;
+    height: 105px;
+  
+    border: 2px solid currentColor;
+    border-radius: 50%;
+  
+    margin: 65px auto 48px;
+  
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  
+    font-size: 48px;
+  }
+  
+  .expired-icon {
+    color: #ff7777;
+  }
+  
+  .returned-icon {
+    color: #62b8ff;
+  }
+  
+  /* MODAL */
+  
+  .modal {
+    display: none;
+  
+    position: absolute;
+    inset: 0;
+  
+    z-index: 10;
+  
+    padding: 40px 34px;
+  
+    background:
+      radial-gradient(
+        circle at 50% 15%,
+        #171d20 0%,
+        #0e1214 45%,
+        #0b0e10 100%
+      );
+  }
+  
+  .modal.active {
+    display: block;
+  }
+  
+  .modal h2 {
+    font-size: 27px;
+    line-height: 1.1;
+  
+    margin: 70px 0 14px;
+  }
+  
+  .modal p {
+    color: #969ea1;
+  
+    font-size: 14px;
+    line-height: 1.55;
+  
+    margin: 0 0 30px;
+  }
+  
+  .modal .close-button {
+    background: transparent;
+  
+    border: 1px solid #343b3f;
+  
+    color: #858e91;
+  }
+  
+  .modal .close-button:hover {
+    background: transparent;
+  
+    border-color: #35d58a;
+  
+    color: #35d58a;
+  }
+  
+  /* MOBIL */
+  
+  @media (max-width: 600px) {
+  
+    body {
+      padding: 0;
+    }
+  
+    .phone {
+      max-width: none;
+      min-height: 100vh;
+  
+      border-radius: 0;
+      border-left: 0;
+      border-right: 0;
+  
+      padding: 32px 24px;
+    }
+  
+    h1 {
+      font-size: 31px;
+    }
+  
+    .countdown-time {
+      font-size: 26px;
+    }
+  
+    .modal {
+      padding: 32px 24px;
+    }
+  }
