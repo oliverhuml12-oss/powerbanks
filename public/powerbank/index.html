@@ -39,6 +39,7 @@
 
       <p id="description" class="description"></p>
 
+
       <!-- AVAILABLE -->
 
       <div id="availableSection" style="display:none;">
@@ -53,11 +54,12 @@
           placeholder="Zadej manipulační kód"
         >
 
-        <button id="borrowButton">
+        <button id="borrowButton" type="button">
           Půjčit powerbanku
         </button>
 
         <div class="info">
+
           <div class="info-title">
             Lhůta pro vrácení je 7 dní.
           </div>
@@ -66,6 +68,7 @@
             Po zapůjčení můžeš powerbanku vrátit na kterémkoliv
             zapojeném místě.
           </div>
+
         </div>
 
       </div>
@@ -197,6 +200,23 @@
 
       </div>
 
+
+      <!-- RESET -->
+
+      <div
+        class="reset-box"
+        style="margin-top: 30px;"
+      >
+
+        <button
+          type="button"
+          id="resetButton"
+        >
+          Reset powerbanky
+        </button>
+
+      </div>
+
     </div>
 
   </div>
@@ -223,7 +243,10 @@
       placeholder="Zadej kód místa"
     >
 
-    <button type="button" id="confirmReturnButton">
+    <button
+      type="button"
+      id="confirmReturnButton"
+    >
       Potvrdit vrácení
     </button>
 
@@ -237,321 +260,751 @@
 
   </div>
 
+
+  <!-- RESET MODAL -->
+
+  <div class="modal" id="resetModal">
+
+    <h2>Reset powerbanky</h2>
+
+    <p>
+      Zadej administrátorský kód.
+    </p>
+
+    <input
+      id="resetCode"
+      type="password"
+      placeholder="Admin kód"
+    >
+
+    <button
+      type="button"
+      id="confirmResetButton"
+    >
+      Potvrdit reset
+    </button>
+
+    <button
+      type="button"
+      class="close-button"
+      id="closeResetModal"
+    >
+      Zpět
+    </button>
+
+  </div>
+
 </div>
 
+
 <script>
-    const SUPABASE_URL = "https://czvktkzfuskakwxxmetn.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_ldce-2-SnHKZeeX_g5KfCQ_1qYByktp";
-    
-    const supabaseClient = window.supabase.createClient(
-      SUPABASE_URL,
-      SUPABASE_KEY
+
+const SUPABASE_URL =
+  "https://czvktkzfuskakwxxmetn.supabase.co";
+
+const SUPABASE_KEY =
+  "sb_publishable_ldce-2-SnHKZeeX_g5KfCQ_1qYByktp";
+
+const supabaseClient =
+  window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
+
+
+/* =========================
+   ID POWERBANKY
+========================= */
+
+const pathParts =
+  window.location.pathname.split("/");
+
+const powerbankId =
+  Number(pathParts[2]);
+
+document
+  .getElementById("powerbankId")
+  .textContent = powerbankId;
+
+
+let powerbank = null;
+let countdownInterval = null;
+
+
+/* =========================
+   FORMÁT DATA
+========================= */
+
+function formatDate(dateString) {
+
+  if (!dateString) {
+    return "-";
+  }
+
+  return new Date(dateString).toLocaleString(
+    "cs-CZ",
+    {
+      dateStyle: "short",
+      timeStyle: "short"
+    }
+  );
+}
+
+
+/* =========================
+   NAČTENÍ POWERBANKY
+========================= */
+
+async function loadPowerbank() {
+
+  if (
+    !powerbankId ||
+    Number.isNaN(powerbankId)
+  ) {
+
+    showError(
+      "Neplatné ID powerbanky."
     );
-    
-    const pathParts = window.location.pathname.split("/");
-    const powerbankId = Number(pathParts[2]);
-    
-    let powerbank = null;
-    let countdownInterval = null;
-    
-    document.getElementById("powerbankId").textContent = powerbankId;
-    
-    function formatDate(dateString) {
-      if (!dateString) return "-";
-    
-      return new Date(dateString).toLocaleString("cs-CZ", {
-        dateStyle: "short",
-        timeStyle: "short"
-      });
+
+    return;
+  }
+
+
+  const { data, error } =
+    await supabaseClient
+      .from("powerbanks")
+      .select("*")
+      .eq("id", powerbankId)
+      .single();
+
+
+  if (error || !data) {
+
+    console.error(error);
+
+    showError(
+      "Powerbanka nenalezena."
+    );
+
+    return;
+  }
+
+
+  powerbank = data;
+
+  renderPowerbank();
+}
+
+
+/* =========================
+   VYKRESLENÍ
+========================= */
+
+function renderPowerbank() {
+
+  document
+    .getElementById("loading")
+    .style.display = "none";
+
+  document
+    .getElementById("app")
+    .style.display = "block";
+
+
+  hideAllSections();
+
+
+  let status =
+    powerbank.status;
+
+
+  /*
+    Kontrola 7denní expirace
+  */
+
+  if (
+    status === "rented" &&
+    powerbank.rented_at
+  ) {
+
+    const expiration =
+      new Date(
+        powerbank.rented_at
+      ).getTime()
+      +
+      7 * 24 * 60 * 60 * 1000;
+
+
+    if (
+      Date.now() >= expiration
+    ) {
+
+      status = "expired";
+
     }
-    
-    async function loadPowerbank() {
-      if (!powerbankId || Number.isNaN(powerbankId)) {
-        showError("Neplatné ID powerbanky.");
-        return;
-      }
-    
-      const { data, error } = await supabaseClient
-        .from("powerbanks")
-        .select("*")
-        .eq("id", powerbankId)
-        .single();
-    
-      if (error || !data) {
-        console.error(error);
-        showError("Powerbanka nenalezena.");
-        return;
-      }
-    
-      powerbank = data;
-      renderPowerbank();
-    }
-    
-    function renderPowerbank() {
-      document.getElementById("loading").style.display = "none";
-      document.getElementById("app").style.display = "block";
-    
-      hideAllSections();
-    
-      let status = powerbank.status;
-    
-      if (status === "rented" && powerbank.rented_at) {
-        const expiration =
-          new Date(powerbank.rented_at).getTime() +
-          7 * 24 * 60 * 60 * 1000;
-    
-        if (Date.now() >= expiration) {
-          status = "expired";
-        }
-      }
-    
-      if (status === "available") {
-        setStatus("status-new", "STAV: PŘIPRAVENÁ");
-    
-        document.getElementById("title").textContent =
-          "Powerbanka je připravena";
-    
-        document.getElementById("description").textContent =
-          "Pro zapůjčení zadej manipulační kód.";
-    
-        document.getElementById("availableSection").style.display = "block";
-    
-        return;
-      }
-    
-      if (status === "rented") {
-        setStatus("status-borrowed", "STAV: PŮJČENÁ");
-    
-        document.getElementById("title").textContent =
-          "Powerbanka je zapůjčená";
-    
-        document.getElementById("description").textContent =
-          "Vrať powerbanku na kterémkoliv zapojeném místě.";
-    
-        document.getElementById("rentedSection").style.display = "block";
-    
-        document.getElementById("rentedAt").textContent =
-          formatDate(powerbank.rented_at);
-    
-        startCountdown();
-    
-        return;
-      }
-    
-      if (status === "returned") {
-        setStatus("status-returned", "STAV: VRÁCENÁ");
-    
-        document.getElementById("title").textContent =
-          "Powerbanka byla vrácena";
-    
-        document.getElementById("description").textContent =
-          "Tato powerbanka již byla vrácena a není možné ji znovu půjčit.";
-    
-        document.getElementById("returnedSection").style.display = "block";
-    
-        document.getElementById("returnedAt").textContent =
-          formatDate(powerbank.returned_at);
-    
-        document.getElementById("returnedLocation").textContent =
-          powerbank.returned_location_code || "-";
-    
-        return;
-      }
-    
-      if (status === "expired") {
-        setStatus("status-expired", "STAV: EXPIROVANÁ");
-    
-        document.getElementById("title").textContent =
-          "Powerbanka je expirovaná";
-    
-        document.getElementById("description").textContent =
-          "Lhůta pro vrácení powerbanky již uplynula.";
-    
-        document.getElementById("expiredSection").style.display = "block";
-    
-        return;
-      }
-    
-      showError("Neznámý stav powerbanky.");
-    }
-    
-    function hideAllSections() {
-      document.getElementById("availableSection").style.display = "none";
-      document.getElementById("rentedSection").style.display = "none";
-      document.getElementById("returnedSection").style.display = "none";
-      document.getElementById("expiredSection").style.display = "none";
-    }
-    
-    function setStatus(className, text) {
-      const element = document.getElementById("status");
-    
-      element.className = "status " + className;
-      element.textContent = text;
-    }
-    
-    function startCountdown() {
-      if (countdownInterval) {
-        clearInterval(countdownInterval);
-      }
-    
-      function updateCountdown() {
-        const expiration =
-          new Date(powerbank.rented_at).getTime() +
-          7 * 24 * 60 * 60 * 1000;
-    
-        const difference = expiration - Date.now();
-    
-        if (difference <= 0) {
-          clearInterval(countdownInterval);
-    
-          powerbank.status = "expired";
-          renderPowerbank();
-    
-          return;
-        }
-    
-        const totalSeconds = Math.floor(difference / 1000);
-    
-        const days = Math.floor(totalSeconds / 86400);
-    
-        const hours = Math.floor(
-          (totalSeconds % 86400) / 3600
-        );
-    
-        const minutes = Math.floor(
-          (totalSeconds % 3600) / 60
-        );
-    
-        const seconds = totalSeconds % 60;
-    
-        document.getElementById("countdown").textContent =
-          `${String(days).padStart(2, "0")} : ` +
-          `${String(hours).padStart(2, "0")} : ` +
-          `${String(minutes).padStart(2, "0")} : ` +
-          `${String(seconds).padStart(2, "0")}`;
-      }
-    
-      updateCountdown();
-    
-      countdownInterval = setInterval(updateCountdown, 1000);
-    }
-    
-    
-    /* =========================
-       PŮJČENÍ
-    ========================= */
-    
+
+  }
+
+
+  /* AVAILABLE */
+
+  if (status === "available") {
+
+    setStatus(
+      "status-new",
+      "STAV: PŘIPRAVENÁ"
+    );
+
     document
-      .getElementById("borrowButton")
-      .addEventListener("click", async () => {
-    
-        const code = document
+      .getElementById("title")
+      .textContent =
+      "Powerbanka je připravena";
+
+    document
+      .getElementById("description")
+      .textContent =
+      "Pro zapůjčení zadej manipulační kód.";
+
+    document
+      .getElementById("availableSection")
+      .style.display = "block";
+
+    return;
+  }
+
+
+  /* RENTED */
+
+  if (status === "rented") {
+
+    setStatus(
+      "status-borrowed",
+      "STAV: PŮJČENÁ"
+    );
+
+    document
+      .getElementById("title")
+      .textContent =
+      "Powerbanka je zapůjčená";
+
+    document
+      .getElementById("description")
+      .textContent =
+      "Vrať powerbanku na kterémkoliv zapojeném místě.";
+
+    document
+      .getElementById("rentedSection")
+      .style.display = "block";
+
+    document
+      .getElementById("rentedAt")
+      .textContent =
+      formatDate(powerbank.rented_at);
+
+    startCountdown();
+
+    return;
+  }
+
+
+  /* RETURNED */
+
+  if (status === "returned") {
+
+    setStatus(
+      "status-returned",
+      "STAV: VRÁCENÁ"
+    );
+
+    document
+      .getElementById("title")
+      .textContent =
+      "Powerbanka byla vrácena";
+
+    document
+      .getElementById("description")
+      .textContent =
+      "Tato powerbanka již byla vrácena a není možné ji znovu půjčit.";
+
+    document
+      .getElementById("returnedSection")
+      .style.display = "block";
+
+    document
+      .getElementById("returnedAt")
+      .textContent =
+      formatDate(powerbank.returned_at);
+
+    document
+      .getElementById("returnedLocation")
+      .textContent =
+      powerbank.returned_location_code || "-";
+
+    return;
+  }
+
+
+  /* EXPIRED */
+
+  if (status === "expired") {
+
+    setStatus(
+      "status-expired",
+      "STAV: EXPIROVANÁ"
+    );
+
+    document
+      .getElementById("title")
+      .textContent =
+      "Powerbanka je expirovaná";
+
+    document
+      .getElementById("description")
+      .textContent =
+      "Lhůta pro vrácení powerbanky již uplynula.";
+
+    document
+      .getElementById("expiredSection")
+      .style.display = "block";
+
+    return;
+  }
+
+
+  showError(
+    "Neznámý stav powerbanky."
+  );
+}
+
+
+/* =========================
+   SKRYTÍ SEKCI
+========================= */
+
+function hideAllSections() {
+
+  document
+    .getElementById("availableSection")
+    .style.display = "none";
+
+  document
+    .getElementById("rentedSection")
+    .style.display = "none";
+
+  document
+    .getElementById("returnedSection")
+    .style.display = "none";
+
+  document
+    .getElementById("expiredSection")
+    .style.display = "none";
+}
+
+
+/* =========================
+   STATUS
+========================= */
+
+function setStatus(
+  className,
+  text
+) {
+
+  const element =
+    document.getElementById("status");
+
+  element.className =
+    "status " + className;
+
+  element.textContent =
+    text;
+}
+
+
+/* =========================
+   COUNTDOWN
+========================= */
+
+function startCountdown() {
+
+  if (countdownInterval) {
+
+    clearInterval(
+      countdownInterval
+    );
+
+  }
+
+
+  function updateCountdown() {
+
+    const expiration =
+      new Date(
+        powerbank.rented_at
+      ).getTime()
+      +
+      7 * 24 * 60 * 60 * 1000;
+
+
+    const difference =
+      expiration - Date.now();
+
+
+    if (difference <= 0) {
+
+      clearInterval(
+        countdownInterval
+      );
+
+      powerbank.status =
+        "expired";
+
+      renderPowerbank();
+
+      return;
+    }
+
+
+    const totalSeconds =
+      Math.floor(
+        difference / 1000
+      );
+
+
+    const days =
+      Math.floor(
+        totalSeconds / 86400
+      );
+
+
+    const hours =
+      Math.floor(
+        (totalSeconds % 86400) / 3600
+      );
+
+
+    const minutes =
+      Math.floor(
+        (totalSeconds % 3600) / 60
+      );
+
+
+    const seconds =
+      totalSeconds % 60;
+
+
+    document
+      .getElementById("countdown")
+      .textContent =
+      `${String(days).padStart(2, "0")} : ` +
+      `${String(hours).padStart(2, "0")} : ` +
+      `${String(minutes).padStart(2, "0")} : ` +
+      `${String(seconds).padStart(2, "0")}`;
+  }
+
+
+  updateCountdown();
+
+
+  countdownInterval =
+    setInterval(
+      updateCountdown,
+      1000
+    );
+}
+
+
+/* =========================
+   PŮJČENÍ
+========================= */
+
+document
+  .getElementById("borrowButton")
+  .addEventListener(
+    "click",
+    async () => {
+
+      const code =
+        document
           .getElementById("rentalCode")
           .value
           .trim();
-    
-        if (!code) {
-          alert("Zadej manipulační kód.");
-          return;
-        }
-    
-        const { data, error } = await supabaseClient
-          .rpc("borrow_powerbank", {
-            p_powerbank_id: powerbankId,
-            p_location_code: code
-          });
-    
-        if (error) {
-          console.error(error);
-          alert(error.message);
-          return;
-        }
-    
-        console.log(data);
-    
-        await loadPowerbank();
-      });
-    
-    
-    /* =========================
-       OTEVŘENÍ VRÁCENÍ
-    ========================= */
-    
-    document
-      .getElementById("returnButton")
-      .addEventListener("click", () => {
-    
+
+
+      if (!code) {
+
+        alert(
+          "Zadej manipulační kód."
+        );
+
+        return;
+      }
+
+
+      const { data, error } =
+        await supabaseClient
+          .rpc(
+            "borrow_powerbank",
+            {
+              p_powerbank_id:
+                powerbankId,
+
+              p_location_code:
+                code
+            }
+          );
+
+
+      if (error) {
+
+        console.error(error);
+
+        alert(error.message);
+
+        return;
+      }
+
+
+      console.log(data);
+
+      await loadPowerbank();
+    }
+  );
+
+
+/* =========================
+   OTEVŘENÍ VRÁCENÍ
+========================= */
+
+document
+  .getElementById("returnButton")
+  .addEventListener(
+    "click",
+    () => {
+
+      document
+        .getElementById("returnModal")
+        .classList
+        .add("active");
+
+    }
+  );
+
+
+/* =========================
+   ZAVŘENÍ VRÁCENÍ
+========================= */
+
+document
+  .getElementById("closeModal")
+  .addEventListener(
+    "click",
+    () => {
+
+      document
+        .getElementById("returnModal")
+        .classList
+        .remove("active");
+
+    }
+  );
+
+
+/* =========================
+   VRÁCENÍ
+========================= */
+
+document
+  .getElementById("confirmReturnButton")
+  .addEventListener(
+    "click",
+    async () => {
+
+      const code =
         document
-          .getElementById("returnModal")
-          .classList
-          .add("active");
-      });
-    
-    
-    /* =========================
-       ZAVŘENÍ VRÁCENÍ
-    ========================= */
-    
-    document
-      .getElementById("closeModal")
-      .addEventListener("click", () => {
-    
-        document
-          .getElementById("returnModal")
-          .classList
-          .remove("active");
-      });
-    
-    
-    /* =========================
-       VRÁCENÍ
-    ========================= */
-    
-    document
-      .getElementById("confirmReturnButton")
-      .addEventListener("click", async () => {
-    
-        const code = document
           .getElementById("returnCode")
           .value
           .trim();
-    
-        if (!code) {
-          alert("Zadej kód místa.");
-          return;
-        }
-    
-        const { data, error } = await supabaseClient
-          .rpc("return_powerbank", {
-            p_powerbank_id: powerbankId,
-            p_location_code: code
-          });
-    
-        if (error) {
-          console.error(error);
-          alert(error.message);
-          return;
-        }
-    
-        console.log(data);
-    
-        document
-          .getElementById("returnModal")
-          .classList
-          .remove("active");
-    
-        await loadPowerbank();
-      });
-    
-    
-    function showError(message) {
-      document.getElementById("loading").textContent = message;
-    }
-    
-    
-    loadPowerbank();
-    </script>
 
+
+      if (!code) {
+
+        alert(
+          "Zadej kód místa."
+        );
+
+        return;
+      }
+
+
+      const { data, error } =
+        await supabaseClient
+          .rpc(
+            "return_powerbank",
+            {
+              p_powerbank_id:
+                powerbankId,
+
+              p_location_code:
+                code
+            }
+          );
+
+
+      if (error) {
+
+        console.error(error);
+
+        alert(error.message);
+
+        return;
+      }
+
+
+      console.log(data);
+
+
+      document
+        .getElementById("returnModal")
+        .classList
+        .remove("active");
+
+
+      await loadPowerbank();
+    }
+  );
+
+
+/* =========================
+   RESET
+========================= */
+
+document
+  .getElementById("resetButton")
+  .addEventListener(
+    "click",
+    () => {
+
+      document
+        .getElementById("resetModal")
+        .classList
+        .add("active");
+
+    }
+  );
+
+
+/* =========================
+   ZAVŘENÍ RESETU
+========================= */
+
+document
+  .getElementById("closeResetModal")
+  .addEventListener(
+    "click",
+    () => {
+
+      document
+        .getElementById("resetModal")
+        .classList
+        .remove("active");
+
+    }
+  );
+
+
+/* =========================
+   POTVRZENÍ RESETU
+========================= */
+
+document
+  .getElementById("confirmResetButton")
+  .addEventListener(
+    "click",
+    async () => {
+
+      const code =
+        document
+          .getElementById("resetCode")
+          .value
+          .trim();
+
+
+      if (!code) {
+
+        alert(
+          "Zadej administrátorský kód."
+        );
+
+        return;
+      }
+
+
+      const { data, error } =
+        await supabaseClient
+          .rpc(
+            "reset_powerbank",
+            {
+              p_powerbank_id: 1,
+              p_admin_code: code
+            }
+          );
+
+
+      if (error) {
+
+        console.error(error);
+
+        alert(error.message);
+
+        return;
+      }
+
+
+      console.log(data);
+
+
+      alert(
+        "Powerbanka byla resetována."
+      );
+
+
+      document
+        .getElementById("resetModal")
+        .classList
+        .remove("active");
+
+
+      document
+        .getElementById("resetCode")
+        .value = "";
+
+
+      await loadPowerbank();
+    }
+  );
+
+
+/* =========================
+   CHYBA
+========================= */
+
+function showError(message) {
+
+  document
+    .getElementById("loading")
+    .textContent =
+    message;
+}
+
+
+/* =========================
+   START
+========================= */
+
+loadPowerbank();
+
+</script>
 
 </body>
 </html>
