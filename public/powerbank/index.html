@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Powerbanka</title>
+
+  <link rel="stylesheet" href="/style.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+
+<div class="phone">
+
+  <div class="content">
+
+    <div class="brand">
+      <span class="logo">ϟ</span> POWERBANKY
+    </div>
+
+    <div class="powerbank-id">
+      ID: <span id="powerbankId">...</span>
+    </div>
+
+    <div class="divider"></div>
+
+    <div id="loading">
+      Načítám...
+    </div>
+
+    <div id="app" style="display:none;">
+
+      <div id="status" class="status"></div>
+
+      <h1 id="title"></h1>
+
+      <p id="description" class="description"></p>
+
+      <!-- AVAILABLE -->
+
+      <div id="availableSection" style="display:none;">
+
+        <label class="label">
+          Manipulační kód
+        </label>
+
+        <input
+          id="rentalCode"
+          type="text"
+          placeholder="Zadej manipulační kód"
+        >
+
+        <button id="borrowButton">
+          Půjčit powerbanku
+        </button>
+
+        <div class="info">
+          <div class="info-title">
+            Lhůta pro vrácení je 7 dní.
+          </div>
+
+          <div class="info-text">
+            Po zapůjčení můžeš powerbanku vrátit na kterémkoliv
+            zapojeném místě.
+          </div>
+        </div>
+
+      </div>
+
+
+      <!-- RENTED -->
+
+      <div id="rentedSection" style="display:none;">
+
+        <div class="countdown">
+
+          <div class="countdown-label">
+            Zbývá do vrácení
+          </div>
+
+          <div class="countdown-time" id="countdown">
+            00 : 00 : 00 : 00
+          </div>
+
+          <div class="countdown-units">
+            <span>dní</span>
+            <span>hodin</span>
+            <span>minut</span>
+            <span>sekund</span>
+          </div>
+
+          <div class="detail">
+
+            <div class="detail-label">
+              Půjčeno
+            </div>
+
+            <div class="detail-value" id="rentedAt"></div>
+
+          </div>
+
+          <div class="detail">
+
+            <div class="detail-label">
+              Kde vrátit?
+            </div>
+
+            <div class="detail-value">
+              Na kterémkoliv zapojeném místě.
+            </div>
+
+          </div>
+
+        </div>
+
+        <div class="return-box">
+
+          <button type="button" id="returnButton">
+            Příjem vrácené powerbanky
+          </button>
+
+          <div class="return-note">
+            Pouze pro podnik, který powerbanku přijímá.
+            Uživatel tuto funkci nepoužívá.
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- RETURNED -->
+
+      <div id="returnedSection" style="display:none;">
+
+        <div class="big-icon returned-icon">
+          ✓
+        </div>
+
+        <div class="info">
+
+          <div class="info-title">
+            Děkujeme za vrácení.
+          </div>
+
+          <div class="info-text">
+            Tato powerbanka je nyní mimo oběh.
+          </div>
+
+        </div>
+
+        <div class="detail">
+
+          <div class="detail-label">
+            Vrácena
+          </div>
+
+          <div class="detail-value" id="returnedAt"></div>
+
+        </div>
+
+        <div class="detail">
+
+          <div class="detail-label">
+            Kód místa vrácení
+          </div>
+
+          <div class="detail-value" id="returnedLocation"></div>
+
+        </div>
+
+      </div>
+
+
+      <!-- EXPIRED -->
+
+      <div id="expiredSection" style="display:none;">
+
+        <div class="big-icon expired-icon">
+          !
+        </div>
+
+        <div class="info">
+
+          <div class="info-title">
+            Powerbanku již nelze vrátit.
+          </div>
+
+          <div class="info-text">
+            Lhůta pro vrácení uplynula a platba za powerbanku propadá.
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- RETURN MODAL -->
+
+  <div class="modal" id="returnModal">
+
+    <h2>Příjem vrácené powerbanky</h2>
+
+    <p>
+      Tato funkce je určena pouze pro podnik,
+      který powerbanku fyzicky přijímá od zákazníka.
+    </p>
+
+    <label class="label" for="returnCode">
+      Kód místa
+    </label>
+
+    <input
+      id="returnCode"
+      type="text"
+      placeholder="Zadej kód místa"
+    >
+
+    <button type="button" id="confirmReturnButton">
+      Potvrdit vrácení
+    </button>
+
+    <button
+      type="button"
+      class="close-button"
+      id="closeModal"
+    >
+      Zpět
+    </button>
+
+  </div>
+
+</div>
+
+
+<script>
+
+const SUPABASE_URL = "https://czvktkzfuskakwxxmetn.supabase.co";
+
+const SUPABASE_KEY =
+  "sb_publishable_ldce-2-SnHKZeeX_g5KfCQ_1qYByktp";
+
+const supabaseClient =
+  window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
+
+
+/*
+  ID POWERBANKY Z URL
+
+  /p/1
+  /p/25
+  /p/100
+*/
+
+const pathParts = window.location.pathname.split("/");
+
+const powerbankId = Number(pathParts[2]);
+
+document.getElementById("powerbankId").textContent =
+  powerbankId;
+
+
+/*
+  AKTUÁLNÍ POWERBANKA
+*/
+
+let powerbank = null;
+
+let countdownInterval = null;
+
+
+/*
+  FORMÁTOVÁNÍ DATA
+*/
+
+function formatDate(dateString) {
+
+  if (!dateString) {
+    return "-";
+  }
+
+  return new Date(dateString).toLocaleString(
+    "cs-CZ",
+    {
+      dateStyle: "short",
+      timeStyle: "short"
+    }
+  );
+}
+
+
+/*
+  NAČTENÍ POWERBANKY
+*/
+
+async function loadPowerbank() {
+
+  if (!powerbankId || Number.isNaN(powerbankId)) {
+
+    showError("Neplatné ID powerbanky.");
+
+    return;
+  }
+
+
+  const { data, error } = await supabaseClient
+    .from("powerbanks")
+    .select("*")
+    .eq("id", powerbankId)
+    .single();
+
+
+  if (error || !data) {
+
+    console.error(error);
+
+    showError("Powerbanka nenalezena.");
+
+    return;
+  }
+
+
+  powerbank = data;
+
+  renderPowerbank();
+}
+
+
+/*
+  ZOBRAZENÍ POWERBANKY
+*/
+
+function renderPowerbank() {
+
+  document.getElementById("loading").style.display =
+    "none";
+
+  document.getElementById("app").style.display =
+    "block";
+
+
+  hideAllSections();
+
+
+  let status = powerbank.status;
+
+
+  /*
+    Pokud je půjčená déle než 7 dní,
+    zobrazíme ji jako expirovanou.
+  */
+
+  if (
+    status === "rented" &&
+    powerbank.rented_at
+  ) {
+
+    const expiration =
+      new Date(powerbank.rented_at).getTime()
+      + (7 * 24 * 60 * 60 * 1000);
+
+    if (Date.now() >= expiration) {
+      status = "expired";
+    }
+
+  }
+
+
+  /*
+    AVAILABLE
+  */
+
+  if (status === "available") {
+
+    setStatus(
+      "status-new",
+      "STAV: PŘIPRAVENÁ"
+    );
+
+    document.getElementById("title").textContent =
+      "Powerbanka je připravena";
+
+    document.getElementById("description").textContent =
+      "Pro zapůjčení zadej manipulační kód.";
+
+    document.getElementById("availableSection")
+      .style.display = "block";
+
+    return;
+  }
+
+
+  /*
+    RENTED
+  */
+
+  if (status === "rented") {
+
+    setStatus(
+      "status-borrowed",
+      "STAV: PŮJČENÁ"
+    );
+
+    document.getElementById("title").textContent =
+      "Powerbanka je zapůjčená";
+
+    document.getElementById("description").textContent =
+      "Vrať powerbanku na kterémkoliv zapojeném místě.";
+
+    document.getElementById("rentedSection")
+      .style.display = "block";
+
+    document.getElementById("rentedAt").textContent =
+      formatDate(powerbank.rented_at);
+
+    startCountdown();
+
+    return;
+  }
+
+
+  /*
+    RETURNED
+  */
+
+  if (status === "returned") {
+
+    setStatus(
+      "status-returned",
+      "STAV: VRÁCENÁ"
+    );
+
+    document.getElementById("title").textContent =
+      "Powerbanka byla vrácena";
+
+    document.getElementById("description").textContent =
+      "Tato powerbanka již byla vrácena a není možné ji znovu půjčit.";
+
+    document.getElementById("returnedSection")
+      .style.display = "block";
+
+    document.getElementById("returnedAt").textContent =
+      formatDate(powerbank.returned_at);
+
+    document.getElementById("returnedLocation").textContent =
+      powerbank.returned_location_code || "-";
+
+    return;
+  }
+
+
+  /*
+    EXPIRED
+  */
+
+  if (status === "expired") {
+
+    setStatus(
+      "status-expired",
+      "STAV: EXPIROVANÁ"
+    );
+
+    document.getElementById("title").textContent =
+      "Powerbanka je expirovaná";
+
+    document.getElementById("description").textContent =
+      "Lhůta pro vrácení powerbanky již uplynula.";
+
+    document.getElementById("expiredSection")
+      .style.display = "block";
+
+    return;
+  }
+
+
+  showError("Neznámý stav powerbanky.");
+}
+
+
+/*
+  SKRYTÍ SEKCI
+*/
+
+function hideAllSections() {
+
+  document.getElementById("availableSection")
+    .style.display = "none";
+
+  document.getElementById("rentedSection")
+    .style.display = "none";
+
+  document.getElementById("returnedSection")
+    .style.display = "none";
+
+  document.getElementById("expiredSection")
+    .style.display = "none";
+}
+
+
+/*
+  STATUS
+*/
+
+function setStatus(className, text) {
+
+  const element =
+    document.getElementById("status");
+
+  element.className =
+    "status " + className;
+
+  element.textContent =
+    text;
+}
+
+
+/*
+  ODPOČET 7 DNÍ
+*/
+
+function startCountdown() {
+
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+  }
+
+
+  function updateCountdown() {
+
+    const expiration =
+      new Date(powerbank.rented_at).getTime()
+      + (7 * 24 * 60 * 60 * 1000);
+
+
+    const difference =
+      expiration - Date.now();
+
+
+    if (difference <= 0) {
+
+      clearInterval(countdownInterval);
+
+      powerbank.status = "expired";
+
+      renderPowerbank();
+
+      return;
+    }
+
+
+    const totalSeconds =
+      Math.floor(difference / 1000);
+
+
+    const days =
+      Math.floor(totalSeconds / 86400);
+
+
+    const hours =
+      Math.floor(
+        (totalSeconds % 86400) / 3600
+      );
+
+
+    const minutes =
+      Math.floor(
+        (totalSeconds % 3600) / 60
+      );
+
+
+    const seconds =
+      totalSeconds % 60;
+
+
+    document.getElementById("countdown").textContent =
+      `${String(days).padStart(2, "0")} : ` +
+      `${String(hours).padStart(2, "0")} : ` +
+      `${String(minutes).padStart(2, "0")} : ` +
+      `${String(seconds).padStart(2, "0")}`;
+  }
+
+
+  updateCountdown();
+
+  countdownInterval =
+    setInterval(updateCountdown, 1000);
+}
+
+
+/*
+  PŮJČENÍ
+*/
+
+document
+  .getElementById("borrowButton")
+  .addEventListener("click", async () => {
+
+    const code =
+      document.getElementById("rentalCode")
+        .value
+        .trim();
+
+
+    if (!code) {
+
+      alert("Zadej manipulační kód.");
+
+      return;
+    }
+
+
+    const { error } =
+      await supabaseClient
+        .from("powerbanks")
+        .update({
+          status: "rented",
+          rented_location_code: code,
+          returned_location_code: null,
+          rented_at: new Date().toISOString(),
+          returned_at: null
+        })
+        .eq("id", powerbankId);
+
+
+    if (error) {
+
+      console.error(error);
+
+      alert("Půjčení se nepodařilo.");
+
+      return;
+    }
+
+
+    await loadPowerbank();
+  });
+
+
+/*
+  OTEVŘENÍ VRÁCENÍ
+*/
+
+document
+  .getElementById("returnButton")
+  .addEventListener("click", () => {
+
+    document
+      .getElementById("returnModal")
+      .classList
+      .add("active");
+
+  });
+
+
+/*
+  ZAVŘENÍ VRÁCENÍ
+*/
+
+document
+  .getElementById("closeModal")
+  .addEventListener("click", () => {
+
+    document
+      .getElementById("returnModal")
+      .classList
+      .remove("active");
+
+  });
+
+
+/*
+  VRÁCENÍ
+*/
+
+document
+  .getElementById("confirmReturnButton")
+  .addEventListener("click", async () => {
+
+    const code =
+      document.getElementById("returnCode")
+        .value
+        .trim();
+
+
+    if (!code) {
+
+      alert("Zadej kód místa.");
+
+      return;
+    }
+
+
+    const { error } =
+      await supabaseClient
+        .from("powerbanks")
+        .update({
+          status: "returned",
+          returned_location_code: code,
+          returned_at: new Date().toISOString()
+        })
+        .eq("id", powerbankId);
+
+
+    if (error) {
+
+      console.error(error);
+
+      alert("Vrácení se nepodařilo.");
+
+      return;
+    }
+
+
+    document
+      .getElementById("returnModal")
+      .classList
+      .remove("active");
+
+
+    await loadPowerbank();
+  });
+
+
+/*
+  CHYBA
+*/
+
+function showError(message) {
+
+  document.getElementById("loading").textContent =
+    message;
+}
+
+
+/*
+  START
+*/
+
+loadPowerbank();
+
+</script>
+
+</body>
+</html>
