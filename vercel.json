@@ -1,20 +1,13 @@
 {
-    "rewrites": [
-      {
-        "source": "/p/PB001",
-        "destination": "/powerbank/new.html"
-      },
-      {
-        "source": "/p/PB002",
-        "destination": "/powerbank/borrowed.html"
-      },
-      {
-        "source": "/p/PB003",
-        "destination": "/powerbank/expired.html"
-      },
-      {
-        "source": "/p/PB004",
-        "destination": "/powerbank/returned.html"
-      }
-    ]
-  }
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "source": "/p/:id",
+      "destination": "/powerbank/index.html"
+    },
+    {
+      "source": "/p/:id/",
+      "destination": "/powerbank/index.html"
+    }
+  ]
+}
