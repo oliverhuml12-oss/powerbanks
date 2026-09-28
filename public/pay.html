@@ -230,7 +230,9 @@
 
     const elements = stripe.elements();
 
-    const card = elements.create("card");
+    const card = elements.create("card", {
+    hidePostalCode: true
+    });
 
     card.mount("#card-element");
 
