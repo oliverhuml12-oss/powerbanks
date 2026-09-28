@@ -299,11 +299,8 @@
 
 <script>
 
-const SUPABASE_URL =
-  "https://czvktkzfuskakwxxmetn.supabase.co";
-
-const SUPABASE_KEY =
-  "sb_publishable_ldce-2-SnHKZeeX_g5KfCQ_1qYByktp";
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_KEY;
 
 const supabaseClient =
   window.supabase.createClient(

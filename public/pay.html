@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Aktivační kód | Powerbanky.eu</title>
+
+  <script src="https://js.stripe.com/v3/"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      color: #111;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 420px;
+      background: white;
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 28px;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+      margin-bottom: 20px;
+    }
+
+    #card-element {
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 20px;
+    }
+
+    .price-box {
+      background: #f7f7f7;
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+
+    .price-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .price-row:last-child {
+      margin-bottom: 0;
+      font-weight: 700;
+    }
+
+    .deposit-note {
+      font-size: 13px;
+      color: #666;
+      margin-top: 12px;
+      line-height: 1.4;
+    }
+
+    button {
+      width: 100%;
+      border: none;
+      border-radius: 8px;
+      padding: 15px;
+      background: #111;
+      color: white;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    #message {
+      margin-top: 16px;
+      color: #c00;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .success {
+      text-align: center;
+    }
+
+    .code {
+      font-size: 38px;
+      font-weight: 800;
+      letter-spacing: 5px;
+      margin: 24px 0;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+
+    <div id="payment-section">
+
+      <h1>Aktivační kód</h1>
+
+      <div class="subtitle">
+        Zaplať a dostaneš kód, který můžeš použít při půjčení powerbanky.
+      </div>
+
+      <div class="price-box">
+
+        <div class="price-row">
+          <span>Půjčení</span>
+          <span>200 Kč</span>
+        </div>
+
+        <div class="price-row">
+          <span>Záloha</span>
+          <span>400 Kč</span>
+        </div>
+
+        <div class="deposit-note">
+          Záloha se pouze zablokuje na kartě. Pokud powerbanku
+          vrátíš včas, záloha se uvolní.
+        </div>
+
+      </div>
+
+      <form id="payment-form">
+
+        <label for="phone">
+          Telefonní číslo
+        </label>
+
+        <input
+          id="phone"
+          type="tel"
+          placeholder="+420 777 123 456"
+          autocomplete="tel"
+          required
+        />
+
+        <label>
+          Platební karta
+        </label>
+
+        <div id="card-element"></div>
+
+        <button id="submit-button" type="submit">
+          Zaplatit 200 Kč + záloha 400 Kč
+        </button>
+
+        <div id="message"></div>
+
+      </form>
+
+    </div>
+
+
+    <div id="success-section" class="success hidden">
+
+      <h1>Hotovo</h1>
+
+      <div>
+        Tvoje aktivační číslo:
+      </div>
+
+      <div id="activation-code" class="code">
+        ------
+      </div>
+
+      <div>
+        Kód jsme také poslali SMS na tvoje telefonní číslo.
+      </div>
+
+      <br>
+
+      <div>
+        Kód můžeš použít při půjčení powerbanky.
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <script>
+
+    const stripe = Stripe(
+      "pk_test_51UKYIKA94zyyeE9IzHBUBTiMgl2ecJo4xkStNDLXtauxaH5lyznw5oyP3IEpYkA1QxJjkKy60JyMZUeENysBiW2d0060w64PqA"
+    );
+
+    const elements = stripe.elements();
+
+    const card = elements.create("card");
+
+    card.mount("#card-element");
+
+
+    const form =
+      document.getElementById("payment-form");
+
+    const button =
+      document.getElementById("submit-button");
+
+    const message =
+      document.getElementById("message");
+
+    const paymentSection =
+      document.getElementById("payment-section");
+
+    const successSection =
+      document.getElementById("success-section");
+
+    const activationCode =
+      document.getElementById("activation-code");
+
+
+    form.addEventListener("submit", async function(event) {
+
+      event.preventDefault();
+
+      message.textContent = "";
+
+      const phone =
+        document.getElementById("phone").value.trim();
+
+
+      if (!phone) {
+
+        message.textContent =
+          "Zadej telefonní číslo.";
+
+        return;
+
+      }
+
+
+      button.disabled = true;
+
+      button.textContent =
+        "Připravuji platbu...";
+
+
+      try {
+
+        /*
+         * Vytvoření aktivačního kódu
+         * a Stripe PaymentIntentů na serveru.
+         */
+
+        const response =
+          await fetch("/api/create-payment-intent", {
+
+            method: "POST",
+
+            headers: {
+              "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+              phone: phone
+            })
+
+          });
+
+
+        const data =
+          await response.json();
+
+
+        if (!response.ok) {
+
+          throw new Error(
+            data.error ||
+            "Nepodařilo se vytvořit platbu."
+          );
+
+        }
+
+
+        /*
+         * Nejprve autorizujeme zálohu.
+         */
+
+        button.textContent =
+          "Ověřuji kartu...";
+
+
+        const depositResult =
+          await stripe.confirmCardPayment(
+            data.depositPaymentClientSecret,
+            {
+              payment_method: {
+                card: card
+              }
+            }
+          );
+
+
+        if (depositResult.error) {
+
+          throw new Error(
+            depositResult.error.message
+          );
+
+        }
+
+
+        /*
+         * Potom strhneme 200 Kč.
+         */
+
+        button.textContent =
+          "Dokončuji platbu...";
+
+
+        const rentalResult =
+          await stripe.confirmCardPayment(
+            data.rentalPaymentClientSecret,
+            {
+              payment_method: {
+                card: card
+              }
+            }
+          );
+
+
+        if (rentalResult.error) {
+
+          throw new Error(
+            rentalResult.error.message
+          );
+
+        }
+
+
+        /*
+         * Backend nyní označí nákup jako zaplacený
+         * a vrátí aktivační kód.
+         */
+
+        button.textContent =
+          "Dokončuji...";
+
+
+        const completeResponse =
+          await fetch("/api/complete-rental", {
+
+            method: "POST",
+
+            headers: {
+              "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+
+              userKeyId:
+                data.userKeyId,
+
+              rentalPaymentIntentId:
+                rentalResult.paymentIntent.id,
+
+              depositPaymentIntentId:
+                depositResult.paymentIntent.id
+
+            })
+
+          });
+
+
+        const completeData =
+          await completeResponse.json();
+
+
+        if (!completeResponse.ok) {
+
+          throw new Error(
+            completeData.error ||
+            "Nepodařilo se dokončit nákup."
+          );
+
+        }
+
+
+        activationCode.textContent =
+          completeData.activationCode;
+
+
+        paymentSection.classList.add("hidden");
+
+        successSection.classList.remove("hidden");
+
+
+      } catch (error) {
+
+        console.error(error);
+
+        message.textContent =
+          error.message ||
+          "Platbu se nepodařilo dokončit.";
+
+        button.disabled = false;
+
+        button.textContent =
+          "Zaplatit 200 Kč + záloha 400 Kč";
+
+      }
+
+    });
+
+  </script>
+
+</body>
+</html>
